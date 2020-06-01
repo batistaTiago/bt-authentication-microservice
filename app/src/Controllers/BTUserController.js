@@ -1,5 +1,5 @@
 const ERRORS = require('../errors');
-// const bcrypt = require('bcrypt');
+const bcrypt = require('bcrypt');
 
 class BTUserController {
     constructor(userModel) {
@@ -12,10 +12,13 @@ class BTUserController {
         this.getById = this.getById.bind(this);
         this.updateUser = this.updateUser.bind(this);
         this.deleteUser = this.deleteUser.bind(this);
+
+        this.bcryptSaltRounds = 11; // arround 150ms on localhost; @TODO: look for other possibilities
     }
 
     newUser = async(req, res) => {
         try {
+            const hashedPassword = await bcrypt.hash(req.body.password, this.bcryptSaltRounds);
 
             const newUser = new this.userModel(req.body);
             await newUser.save();
