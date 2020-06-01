@@ -1,0 +1,16 @@
+version: '3'
+services:
+    auth_db:
+        image: mongo:3.6
+        volumes: 
+            - ./dbase:/db/data
+    auth_app:
+        image: node:12-stretch-slim
+        volumes:
+            - ./app:/app
+        ports:
+            - 3000:3000
+        working_dir: /app
+        command: bash ./boot.sh
+        depends_on: 
+            - auth_db
