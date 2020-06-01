@@ -1,4 +1,5 @@
 const ERRORS = require('../errors');
+// const bcrypt = require('bcrypt');
 
 class BTUserController {
     constructor(userModel) {
@@ -15,6 +16,7 @@ class BTUserController {
 
     newUser = async(req, res) => {
         try {
+
             const newUser = new this.userModel(req.body);
             await newUser.save();
             return res.status(201).json({
@@ -40,7 +42,7 @@ class BTUserController {
 
     getAll = async(req, res) => {
         try {
-            const options = req.query.include_inactive == 0 ? { account_active: true } : {};
+            const options = req.query.include_deleted == 1 ? {} : { deleted: false };
             const users = await this.userModel.find(options);
             return res.json({
                 success: users.length > 0,
@@ -57,7 +59,7 @@ class BTUserController {
     getById = async(req, res) => {
         try {
             const id = req.params.id;
-            const options = req.query.include_inactive == 1 ? { _id: id } : { _id: id, account_active: true };
+            const options = req.query.include_deleted == 1 ? { _id: id } : { _id: id, deleted: false };
             const user = await this.userModel.where(options).findOne();
             if (user) {
                 return res.json({
@@ -78,15 +80,30 @@ class BTUserController {
     updateUser = async(req, res) => {
         try {
             const id = req.params.id;
-            const updated_user = await this.userModel.findByIdAndUpdate(id, req.body, { new: true });
-            return res.json({
-                success: true,
-                user: updated_user
-            });
+            const options = req.query.include_deleted == 1 ? { _id: id } : { _id: id, deleted: false };
+            const user = await this.userModel.where(options).findOne();
+            if (user) {
+                const result = await user.update(req.body, { new: true });
+                return res.json({
+                    success: !!result.ok
+                });
+            } else {
+                const error = ERRORS.NOT_FOUND;
+                return res.json(error);
+            }
         } catch (e) {
             console.log(e);
             const error = ERRORS.GENERIC_400;
-            error.details = e.errors;
+
+            if (e.name && e.name == "MongoError") {
+                if (e.code == 11000) {
+                    e.errmsg = `Duplicate entry for email (${req.body.email})`
+                }
+                error.details = e;
+            } else {
+                error.details = e.errors;
+            }
+
             return res.status(400).json(error);
         }
     }
@@ -94,12 +111,11 @@ class BTUserController {
     deleteUser = async(req, res) => {
         try {
             const id = req.params.id;
-            const updated_user = await this.userModel.findByIdAndUpdate(id, { account_active: false }, { new: true });
-            if (updated_user) {
-                return res.status(206).json({
-                    success: true
-                });
-            }
+            const user = await this.userModel.findById(id);
+            await user.delete();
+            return res.status(206).json({
+                success: true
+            });
         } catch (e) {
             console.log(e);
             const error = ERRORS.GENERIC_400;

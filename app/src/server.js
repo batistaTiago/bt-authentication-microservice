@@ -1,13 +1,18 @@
 /* packages used */
 const cors = require('cors');
+const mongoose_delete = require('mongoose-delete');
+
 const bodyParser = require('body-parser');
 const express = require('express');
 const server = express();
 const mongoose = require('mongoose');
 const BT_USER_SCHEMA = require('./Schemas/BTUserSchema');
 
+
 /* app level imports */
 const BTUserController = require('./Controllers/BTUserController');
+
+
 
 
 
@@ -36,6 +41,7 @@ server.use((req, res, next) => {
 
 /* inicializando MVC */
 const userSchema = new mongoose.Schema(BT_USER_SCHEMA);
+userSchema.plugin(mongoose_delete)
 const userModel = new mongoose.model('User', userSchema);
 const userController = new BTUserController(userModel);
 
