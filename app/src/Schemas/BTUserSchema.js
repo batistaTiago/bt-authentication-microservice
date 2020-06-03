@@ -1,12 +1,19 @@
 module.exports = {
-    name: {
-        type: String,
-        required: true,
-    },
     email: {
         type: String,
         required: true,
         unique: true,
+    },
+    password: {
+        type: String,
+        required: true,
+        minlength: 6,
+        maxlength: 64,
+        hideJSON: true
+    },
+    name: {
+        type: String,
+        required: true,
     },
     subscribed_to_newsletter: {
         type: Boolean,

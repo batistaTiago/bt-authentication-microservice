@@ -1,9 +1,14 @@
 version: '3'
+networks: 
+    db_subnetwork:
+    queue_subnetwork:
 services:
     auth_db:
         image: mongo:3.6
         volumes: 
             - ./dbase:/db/data
+        networks:
+            - 'db_subnetwork'
     auth_app:
         build: ./app
         volumes:
@@ -11,5 +16,23 @@ services:
             - /app/node_modules/bcrypt/
         ports:
             - 3000:3000
+        networks:
+            - db_subnetwork
+            - queue_subnetwork
         depends_on: 
             - auth_db
+            - auth_queue
+    auth_queue:
+        image: redis:3.2
+        networks: 
+            - queue_subnetwork
+    auth_worker:
+        image: python:3.6
+        networks:
+            - queue_subnetwork
+        volumes:
+            - ./worker:/worker
+        working_dir: /worker
+        command: ./boot.sh
+        depends_on: 
+            - auth_queue
