@@ -15,10 +15,10 @@ class BTUserController {
         this.updateUser = this.updateUser.bind(this);
         this.deleteUser = this.deleteUser.bind(this);
         this.checkPassword = this.checkPassword.bind(this);
+        this.readQueue = this.readQueue.bind(this);
 
         this.bcryptSaltRounds = 11; // arround 150ms on localhost; @TODO: look for other possibilities
         this.secret = process.env.SECRET || '123456';
-
     }
 
     checkPassword = (reqBody) => {
@@ -41,7 +41,7 @@ class BTUserController {
 
             await newUser.save();
 
-            await this.redis.sendMessageAsync({ qname: 'register_message_queue', message: 'Novo usuário! ID: ' + newUser.id });
+            await this.redis.sendMessageAsync({ qname: 'register_message_queue', message: JSON.stringify({ email: newUser.email, name: newUser.name }) });
 
             return res.status(201).json({
                 success: true,
@@ -228,6 +228,20 @@ class BTUserController {
             error.details = e.errors;
             return res.status(400).json(error);
         }
+    }
+
+    readQueue = async(req, res) => {
+        this.redis.popMessage({ qname: "register_message_queue" }, (err, resp) => {
+            if (err) {
+                return res.send(err);
+            }
+
+            if (resp.id) {
+                return res.send(resp);
+            } else {
+                return res.send('no message');
+            }
+        });
     }
 }
 

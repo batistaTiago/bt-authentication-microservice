@@ -29,7 +29,8 @@ mongoose.connect('mongodb://auth_db/users', { useNewUrlParser: true, useUnifiedT
 
 /* setting up redis */
 const rsmq = new redis_mq({ host: 'auth_queue', port: 6379, ns: 'rsmq' });
-rsmq.createQueue({ qname: 'register_message_queue', delay: 5 }, () => {});
+rsmq.createQueue({ qname: 'register_message_queue' }, () => {});
+
 
 
 
@@ -83,6 +84,7 @@ server.patch('/users/:id', userController.updateUser);
 server.delete('/users/:id', userController.deleteUser);
 
 server.post('/login', userController.login);
+server.post('/read-queue', userController.readQueue);
 /* @END application routes */
 
 PORT = process.env.PORT || 3000;

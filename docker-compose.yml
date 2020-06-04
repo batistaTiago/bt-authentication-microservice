@@ -9,6 +9,10 @@ services:
             - ./dbase:/db/data
         networks:
             - 'db_subnetwork'
+    auth_queue:
+        image: redis:3.2
+        networks: 
+            - queue_subnetwork
     auth_app:
         build: ./app
         volumes:
@@ -22,17 +26,14 @@ services:
         depends_on: 
             - auth_db
             - auth_queue
-    auth_queue:
-        image: redis:3.2
-        networks: 
-            - queue_subnetwork
     auth_worker:
-        image: python:3.6
-        networks:
-            - queue_subnetwork
+        build: ./worker
         volumes:
             - ./worker:/worker
-        working_dir: /worker
-        command: ./boot.sh
+        networks:
+            - queue_subnetwork
         depends_on: 
             - auth_queue
+            - auth_app
+        # working_dir: /worker
+        # command: ./boot.sh
